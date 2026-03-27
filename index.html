@@ -68,18 +68,15 @@
 
         /* ПОЗИЦИОНИРОВАНИЕ КНОПОК ВНУТРИ МОДЕЛИ (для AR) */
         .controls {
-            position: absolute;
-            bottom: 30px; /* Отступ снизу экрана */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            z-index: 9999; /* Поверх всего */
-            pointer-events: auto; /* Разрешить клики */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    position: absolute;
+    bottom: 15%; /* Подняли повыше, чтобы не перекрывалась системными кнопками */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    z-index: 99999;
+    pointer-events: auto; /* Важно: чтобы кнопка нажималась! */
+    display: flex !important;
+}
 
         /* Облачко с текстом ответа ИИ */
         #response-text {
@@ -169,29 +166,26 @@
     </div>
 
     <model-viewer 
-        id="nurse-model"
-        src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-        scale="0.3 0.3 0.3" /* ИСПРАВЛЕНИЕ: Уменьшили модель в 3 раза */
-        ar 
-        ar-modes="webxr scene-viewer quick-look" 
-        camera-controls 
-        shadow-intensity="1"
-        autoplay
-        animation-name="Idle"
-        tone-mapping="neutral">
-        
-        <button slot="ar-button" class="ar-button">📦 Поставить в комнате</button>
+    id="nurse-model" 
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
+    scale="0.3 0.3 0.3" 
+    ar 
+    ar-modes="webxr scene-viewer quick-look" 
+    camera-controls 
+    shadow-intensity="1" 
+    autoplay 
+    animation-name="Idle">
 
-        <div class="controls" slot="content">
-            <div id="response-text"></div>
-            <button id="talk-button">
-                <span id="mic-icon">🎤</span>
-                <span id="button-text">Спросить медсестру</span>
-            </button>
-        </div>
+    <button slot="ar-button" class="ar-button">📦 Поставить в комнате</button>
 
-    </model-viewer>
+    <div slot="content" class="controls">
+        <div id="response-text"></div>
+        <button id="talk-button">
+            🎤 Спросить медсестру
+        </button>
+    </div>
 
+</model-viewer>
    <script>
 // Глобальные переменные (без изменений)
 const responseBox = document.getElementById('response-text');
