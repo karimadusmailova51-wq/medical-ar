@@ -50,16 +50,29 @@
         /* Контейнер для кнопок и текста внутри AR */
         .controls {
             position: absolute;
-            bottom: 100px; /* Подняли, чтобы было видно на всех телефонах */
+            bottom: 30px; /* Опустим пониже к пальцам */
             left: 50%;
             transform: translateX(-50%);
-            width: 85%;
+            width: 90%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
-            z-index: 999;
-            pointer-events: none;
+            gap: 10px;
+            z-index: 9999; /* Поверх всего! */
+        }
+
+        #start-voice-btn {
+            background: #ff4757; /* Красный цвет - его нельзя не заметить */
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(255, 71, 87, 0.5);
+            pointer-events: auto;
+            cursor: pointer;
+            -webkit-appearance: none; /* Убираем стандартные стили Apple */
         }
 
         /* Облачко ответа */
@@ -175,14 +188,25 @@ if (recognition) {
 
 // --- 3. ЛОГИКА КНОПКИ (ДЛЯ IPHONE) ---
 startBtn.onclick = () => {
+    // Разблокировка звука для iOS
+    if (window.AudioContext || window.webkitAudioContext) {
+        const audioCtx = new (window.AudioContext || window.webkitwebkitAudioContext)();
+        audioCtx.resume();
+    }
+
     if (recognition) {
         try {
             recognition.start();
+            startBtn.innerText = "🎤 Слушаю...";
+            startBtn.style.background = "#2ed573"; // Зеленый, когда слушает
         } catch(e) {
-            console.log("Уже запущено");
+            console.log("Ошибка старта:", e);
+            // Если уже запущено, просто пробуем еще раз
+            recognition.stop();
+            setTimeout(() => recognition.start(), 100);
         }
     } else {
-        alert("Браузер не поддерживает голос.");
+        alert("Голос не поддерживается");
     }
 };
 
