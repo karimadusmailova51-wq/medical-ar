@@ -3,172 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Виртуальная Медсестра: Контроль Антибиотиков</title>
+    <title>Виртуальная Медсестра</title>
     
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
     <style>
         :root {
             --med-blue: #007bff;
-            --med-dark: #0056b3;
-            --med-light: #e3f2fd;
+
             --white: #ffffff;
-            --error-red: #dc3545;
+
             --text-gray: #333;
         }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-family: Arial, sans-serif; 
             margin: 0; 
             padding: 0;
             background-color: #f0f4f8;
-            color: var(--text-gray);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+
             overflow: hidden;
         }
 
-        /* Верхняя панель (скрывается в AR) */
+        /* Шапка */
         .header {
-            background: linear-gradient(135deg, var(--med-blue), var(--med-dark));
+            background: var(--med-blue);
             color: white;
-            padding: 15px;
+            padding: 10px;
             text-align: center;
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
             z-index: 10;
-            transition: opacity 0.3s ease;
+            position: relative;
         }
 
-        h1 { margin: 0; font-size: 18px; letter-spacing: 0.5px; }
-        
-        .status-badge {
-            background: rgba(255,255,255,0.2);
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-top: 5px;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        /* Окно 3D модели - теперь занимает весь экран */
+        /* 3D Окно */
         model-viewer { 
-            flex-grow: 1;
+
             width: 100vw; 
             height: 100vh;
-            background-color: transparent;
-            --progress-bar-color: var(--med-blue);
+
             position: absolute;
             top: 0;
             left: 0;
         }
 
-        /* ПОЗИЦИОНИРОВАНИЕ КНОПОК ВНУТРИ МОДЕЛИ (для AR) */
+        /* Контейнер для кнопок и текста внутри AR */
         .controls {
-    position: absolute;
-    bottom: 15%; /* Подняли повыше, чтобы не перекрывалась системными кнопками */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    z-index: 99999;
-    pointer-events: auto; /* Важно: чтобы кнопка нажималась! */
-    display: flex !important;
-}
-
-        /* Облачко с текстом ответа ИИ */
-        #response-text {
-            background: rgba(255, 255, 255, 0.9); /* Полупрозрачный белый */
-            color: var(--text-gray);
-            padding: 15px;
-            border-radius: 18px;
-            margin-bottom: 15px;
-            font-size: 15px;
-            line-height: 1.4;
-            display: none; /* Скрыт по умолчанию */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            border-left: 5px solid var(--med-blue);
-            max-height: 120px;
-            overflow-y: auto;
-            width: 100%;
-            box-sizing: border-box;
-            backdrop-filter: blur(5px); /* Размытие фона за текстом */
-        }
-
-        /* Кнопка микрофона */
-        #talk-button {
-            background: var(--med-blue);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
-            cursor: pointer;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        #talk-button:disabled {
-            background: #ccc;
-            box-shadow: none;
-            cursor: not-allowed;
-        }
-
-        /* Кнопка AR (стандартная от model-viewer) */
-        .ar-button {
-            background-color: var(--white);
-            border-radius: 8px;
-            border: none;
             position: absolute;
-            top: 70px; /* Чуть ниже хедера */
-            right: 16px;
-            padding: 10px 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            font-weight: bold;
-            color: var(--med-blue);
-            z-index: 11;
-        }
-
-        /* Скрываем хедер, когда активен AR режим */
-        model-viewer[ar-status="session-started"] ~ .header {
-            opacity: 0;
+            bottom: 100px; /* Подняли, чтобы было видно на всех телефонах */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            z-index: 999;
             pointer-events: none;
         }
 
-        /* Анимация пульсации при записи */
-        .listening {
-            animation: pulse 1.5s infinite;
-            background: var(--error-red) !important;
-            box-shadow: 0 6px 20px rgba(220,53,69,0.4) !important;
+        /* Облачко ответа */
+        #response-text {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text-gray);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 16px;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            pointer-events: auto;
+            width: 100%;
+            text-align: center;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.6); }
-            70% { box-shadow: 0 0 0 15px rgba(220, 53, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        /* Синяя кнопка для iPhone/Android */
+        #start-voice-btn {
+            background: var(--med-blue);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            cursor: pointer;
+
+        }
+
+        /* Кнопка входа в AR */
+        .ar-button {
+            background: white;
+            color: var(--med-blue);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            font-weight: bold;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Виртуальный помощник</h1>
-        <div class="status-badge">AI Консультант: Антибиотикорезистентность</div>
-    </div>
+<div class="header">
+    <h1 style="margin:0; font-size:16px;">Виртуальная Медсестра</h1>
+</div>
 
-    <model-viewer 
+<model-viewer 
     id="nurse-model" 
     src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-    scale="0.3 0.3 0.3" 
+
     ar 
     ar-modes="webxr scene-viewer quick-look" 
     camera-controls 
@@ -179,71 +126,73 @@
     <button slot="ar-button" class="ar-button">📦 Поставить в комнате</button>
 
     <div slot="content" class="controls">
-    <div id="response-text"></div>
-    <button id="start-voice-btn" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 20px;">
-        🎤 Начать разговор
-    </button>
-</div>
-
+        <div id="response-text"></div>
+        <button id="start-voice-btn">🎤 Начать разговор</button>
+    </div>
 </model-viewer>
-   <script>
-    const startBtn = document.getElementById('start-voice-btn');
 
-startBtn.onclick = () => {
-    try {
-        recognition.start();
-        startBtn.style.display = 'none'; // Скрываем кнопку после нажатия
-    } catch(e) {
-        console.log("Уже запущено");
-    }
-};
-// 1. Инициализация (Глобальные переменные)
+<script>
+// --- 1. ПЕРЕМЕННЫЕ ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
 const responseBox = document.getElementById('response-text');
+const startBtn = document.getElementById('start-voice-btn');
 const modelViewer = document.querySelector('#nurse-model');
 
-// Настройка микрофона
+// --- 2. НАСТРОЙКА МИКРОФОНА ---
 if (recognition) {
     recognition.lang = 'ru-RU';
     recognition.interimResults = false;
 
     recognition.onstart = () => {
         window.speechSynthesis.cancel();
-        responseBox.style.display = 'block'; 
+        responseBox.style.display = 'block';
         responseBox.innerText = "🎤 Слушаю вас...";
+        startBtn.style.display = 'none'; // Скрываем кнопку, пока слушаем
     };
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        askAI(transcript); 
+        askAI(transcript);
     };
 
     recognition.onerror = (err) => {
-        console.error("Ошибка микрофона:", err.error);
+        console.error("Ошибка:", err.error);
+        startBtn.style.display = 'block';
+        startBtn.innerText = "Попробовать снова";
+    };
+
+    recognition.onend = () => {
+        // Если ничего не ответили, возвращаем кнопку через 2 сек
+        setTimeout(() => {
+            if (responseBox.innerText === "🎤 Слушаю вас...") {
+                startBtn.style.display = 'block';
+                startBtn.innerText = "🎤 Начать разговор";
+            }
+        }, 2000);
     };
 }
 
-// 2. Автозапуск в AR
-modelViewer.addEventListener('ar-status', (event) => {
-
-    if (event.detail.status === 'session-started') {
-        setTimeout(() => {
-            try {
-                recognition.start();
-            } catch(e) { console.log("Микрофон уже активен"); }
-        }, 3000); 
+// --- 3. ЛОГИКА КНОПКИ (ДЛЯ IPHONE) ---
+startBtn.onclick = () => {
+    if (recognition) {
+        try {
+            recognition.start();
+        } catch(e) {
+            console.log("Уже запущено");
+        }
+    } else {
+        alert("Браузер не поддерживает голос.");
     }
-});
+};
 
-// 3. Работа с ИИ
+// --- 4. РАБОТА С НЕЙРОСЕТЬЮ ---
 async function askAI(question) {
     if (!question) return;
-    const API_KEY = "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"; 
-    
-    responseBox.innerText = 'Медсестра думает...';
-    responseBox.style.display = 'block';
+    const API_KEY = "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";
 
+    responseBox.innerText = 'Медсестра думает...';
+    
     try {
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -252,8 +201,8 @@ async function askAI(question) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                "model": "openrouter/auto", 
-                "messages": [{ "role": "user", "content": "Ты медсестра. Ответь кратко (до 3 предложений): " + question }]
+                "model": "openrouter/auto",
+                "messages": [{ "role": "user", "content": "Ты медсестра. Ответь кратко на русском: " + question }]
             })
         });
 
@@ -262,22 +211,21 @@ async function askAI(question) {
         responseBox.innerText = aiResponse;
         speak(aiResponse);
     } catch (err) {
-        responseBox.innerText = 'Ошибка связи.';
+        responseBox.innerText = 'Ошибка связи. Проверьте интернет.';
+        startBtn.style.display = 'block';
     }
 }
 
-// 4. Голос и цикл
+// --- 5. ОЗВУЧКА ---
 function speak(text) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ru-RU';
 
     utterance.onend = () => {
-        modelViewer.animationName = 'Idle';
-        // ВКЛЮЧАЕМ МИКРОФОН СНОВА ПОСЛЕ ОТВЕТА
-        setTimeout(() => {
-            try { recognition.start(); } catch(e) {}
-        }, 500);
+        // После того как медсестра ответила, возвращаем кнопку
+        startBtn.style.display = 'block';
+        startBtn.innerText = "🎤 Спросить еще раз";
     };
 
     window.speechSynthesis.speak(utterance);
