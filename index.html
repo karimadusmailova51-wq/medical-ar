@@ -180,9 +180,7 @@
 
     <div slot="content" class="controls">
         <div id="response-text"></div>
-        <button id="talk-button">
-            🎤 Спросить медсестру
-        </button>
+        
     </div>
 
 </model-viewer>
@@ -190,8 +188,9 @@
 // Глобальные переменные (без изменений)
 const responseBox = document.getElementById('response-text');
 const talkBtn = document.getElementById('talk-button');
-const btnText = document.getElementById('button-text');
-const modelViewer = document.querySelector('#nurse-model');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+ const modelViewer = document.querySelector('#nurse-model');
 const arBtn = document.getElementById('ar-button');
 
 // Добавляем проверку и кнопку AR
@@ -202,6 +201,21 @@ if (arBtn && modelViewer) {
         }
     });
 }
+modelViewer.addEventListener('ar-status', (event) => {
+    // Эта проверка понимает, когда телефон перешел в режим камеры (AR)
+    if (event.detail.status === 'session-started') {
+        setTimeout(() => {
+            try {
+                // Пытаемся включить микрофон автоматически
+                recognition.start(); 
+                responseBox.style.display = 'block';
+                responseBox.innerText = "🎤 Я вас слушаю...";
+            } catch(e) {
+                console.log("Автозапуск не удался, возможно микрофон уже занят");
+            }
+        }, 3000); // 3 секунды задержки, чтобы камера успела сфокусироваться
+    }
+});
 // --- Функция запроса через OpenRouter (Без изменений, она рабочая) ---
 async function askAI(question) {
     if (!question || question.trim().length === 0) return;
@@ -258,6 +272,9 @@ function speak(text){
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ru-RU';
     window.speechSynthesis.speak(utterance);
+    utterance.onend = () => {
+        try { recognition.start(); } catch(e) {}
+    }
 
     utterance.onstart = () => {
         // У космонавта нет Talking, но код заложили на будущее
@@ -271,9 +288,9 @@ function speak(text){
 }
 
 // --- Распознавание речи (Без изменений) ---
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
 if(SpeechRecognition){
-    const recognition = new SpeechRecognition();
+    recognition = new SpeechRecognition();
     recognition.lang = 'ru-RU';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -288,7 +305,7 @@ if(SpeechRecognition){
 
     recognition.onstart = () => {
         talkBtn.classList.add('listening');
-        btnText.innerText = "Слушаю вас...";
+        responseBox.innerText = "🎤 Слушаю вас...";
         window.speechSynthesis.cancel();
         responseBox.style.display = 'none'; // Скрываем старый ответ
     }
@@ -300,13 +317,12 @@ if(SpeechRecognition){
 
     recognition.onend = () => {
         talkBtn.classList.remove('listening');
-        btnText.innerText = "Спросить медсестру";
+        
     }
 
     recognition.onerror = (event) => {
         talkBtn.classList.remove('listening');
-        btnText.innerText = "Ошибка записи";
-        console.error("Speech Rec Error:", event.error);
+         console.error("Speech Rec Error:", event.error);
     }
 
 } else {
