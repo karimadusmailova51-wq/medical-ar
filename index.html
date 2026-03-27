@@ -179,12 +179,24 @@
     <button slot="ar-button" class="ar-button">📦 Поставить в комнате</button>
 
     <div slot="content" class="controls">
-        <div id="response-text"></div>
-        
-    </div>
+    <div id="response-text"></div>
+    <button id="start-voice-btn" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 20px;">
+        🎤 Начать разговор
+    </button>
+</div>
 
 </model-viewer>
    <script>
+    const startBtn = document.getElementById('start-voice-btn');
+
+startBtn.onclick = () => {
+    try {
+        recognition.start();
+        startBtn.style.display = 'none'; // Скрываем кнопку после нажатия
+    } catch(e) {
+        console.log("Уже запущено");
+    }
+};
 // 1. Инициализация (Глобальные переменные)
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
@@ -259,7 +271,7 @@ function speak(text) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ru-RU';
-    
+
     utterance.onend = () => {
         modelViewer.animationName = 'Idle';
         // ВКЛЮЧАЕМ МИКРОФОН СНОВА ПОСЛЕ ОТВЕТА
