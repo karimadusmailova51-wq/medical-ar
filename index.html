@@ -142,7 +142,7 @@
         }
 
         /* Скрываем хедер, когда активен AR режим */
-        body.in-ar .header {
+        model-viewer[ar-status="session-started"] ~ .header {
             opacity: 0;
             pointer-events: none;
         }
@@ -180,7 +180,7 @@
         animation-name="Idle"
         tone-mapping="neutral">
         
-        <button slot="ar-button" id="ar-button" class="ar-button">📦 Поставить в комнате</button>
+        <button slot="ar-button" class="ar-button">📦 Поставить в комнате</button>
 
         <div class="controls" slot="content">
             <div id="response-text"></div>
@@ -200,28 +200,14 @@ const btnText = document.getElementById('button-text');
 const modelViewer = document.querySelector('#nurse-model');
 const arBtn = document.getElementById('ar-button');
 
+// Добавляем проверку и кнопку AR
 if (arBtn && modelViewer) {
-    arBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
+    arBtn.addEventListener('click', async () => {
         if (modelViewer.canActivateAR) {
             await modelViewer.activateAR();
-        } else {
-            console.warn('AR not available on this device');
-            arBtn.textContent = 'AR недоступен';
         }
     });
 }
-
-if (modelViewer) {
-    modelViewer.addEventListener('ar-status', (event) => {
-        if (event.detail.status === 'session-started') {
-            document.body.classList.add('in-ar');
-        } else if (event.detail.status === 'session-ended') {
-            document.body.classList.remove('in-ar');
-        }
-    });
-}
-
 // --- Функция запроса через OpenRouter (Без изменений, она рабочая) ---
 async function askAI(question) {
     if (!question || question.trim().length === 0) return;
