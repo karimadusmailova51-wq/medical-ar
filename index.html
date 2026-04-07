@@ -8,254 +8,167 @@
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
     <style>
-        :root {
-            --med-blue: #007bff;
-
-            --white: #ffffff;
-
-            --text-gray: #333;
+        body { font-family: sans-serif; margin: 0; background: #f0f4f8; height: 100vh; overflow: hidden; }
+        .header { background: #007bff; color: white; padding: 15px; text-align: center; position: relative; z-index: 10; }
+        
+        /* Исправляем наслоение моделей */
+        #container { position: relative; width: 100vw; height: calc(100vh - 60px); }
+        model-viewer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        
+        .controls { 
+            position: absolute; 
+            bottom: 40px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 85%; 
+            z-index: 1000; 
+            display: flex; 
+            flex-direction: column; 
         }
-
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 0;
-            background-color: #f0f4f8;
-
-            overflow: hidden;
-        }
-
-        /* Шапка */
-        .header {
-            background: var(--med-blue);
-            color: white;
-            padding: 10px;
+        #response-text { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 15px; 
+            margin-bottom: 10px; 
+            display: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
             text-align: center;
-
-            z-index: 10;
-            position: relative;
-        }
-
-        /* 3D Окно */
-        model-viewer { 
-
-            width: 100vw; 
-            height: 100vh;
-
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        /* Контейнер для кнопок и текста внутри AR */
-        .controls {
-            position: absolute;
-            bottom: 30px; /* Опустим пониже к пальцам */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            z-index: 9999; /* Поверх всего! */
-        }
-
-        #start-voice-btn {
-            background: #ff4757; /* Красный цвет - его нельзя не заметить */
-            color: white;
-            border: none;
-            padding: 20px 40px;
-            border-radius: 50px;
-            font-size: 20px;
-            font-weight: bold;
-            box-shadow: 0 10px 25px rgba(255, 71, 87, 0.5);
-            pointer-events: auto;
-            cursor: pointer;
-            -webkit-appearance: none; /* Убираем стандартные стили Apple */
-        }
-
-        /* Облачко ответа */
-        #response-text {
-            background: rgba(255, 255, 255, 0.95);
-            color: var(--text-gray);
-            padding: 15px;
-            border-radius: 15px;
             font-size: 16px;
-            display: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            pointer-events: auto;
-            width: 100%;
-            text-align: center;
         }
-
-        /* Синяя кнопка для iPhone/Android */
-        #start-voice-btn {
-            background: var(--med-blue);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 30px;
-            font-size: 18px;
-            font-weight: bold;
+        #talk-btn { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 20px; 
+            border-radius: 50px; 
+            font-size: 18px; 
+            font-weight: bold; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            pointer-events: auto;
-            cursor: pointer;
-
+            touch-action: manipulation;
         }
-
-        /* Кнопка входа в AR */
-        .ar-button {
-            background: white;
-            color: var(--med-blue);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            position: absolute;
-            top: 60px;
-            right: 20px;
-            font-weight: bold;
-            z-index: 100;
-        }
+        .active { background: #ff4757 !important; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1 style="margin:0; font-size:16px;">Виртуальная Медсестра</h1>
+<div class="header"><h1>Виртуальная Медсестра</h1></div>
+
+<div id="container">
+    <model-viewer id="nurse-model" src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" ar camera-controls autoplay animation-name="Idle"></model-viewer>
+    
+    <div class="controls">
+        <div id="response-text"></div>
+        <button id="talk-btn" type="button">🎤 Спросить астронавта</button>
+    </div>
 </div>
 
-<model-viewer 
-    id="nurse-model" 
-    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" 
-
-    ar 
-    ar-modes="webxr scene-viewer quick-look" 
-    camera-controls 
-    shadow-intensity="1" 
-    autoplay 
-    animation-name="Idle">
-
-    <button slot="ar-button" class="ar-button">📦 Поставить в комнате</button>
-
-    <div slot="content" class="controls">
-        <div id="response-text"></div>
-        <button id="start-voice-btn">🎤 Начать разговор</button>
-    </div>
-</model-viewer>
-
 <script>
-// --- 1. ПЕРЕМЕННЫЕ ---
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-const responseBox = document.getElementById('response-text');
-const startBtn = document.getElementById('start-voice-btn');
-const modelViewer = document.querySelector('#nurse-model');
-
-// --- 2. НАСТРОЙКА МИКРОФОНА ---
-if (recognition) {
-    recognition.lang = 'ru-RU';
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-        window.speechSynthesis.cancel();
-        responseBox.style.display = 'block';
-        responseBox.innerText = "🎤 Слушаю вас...";
-        startBtn.style.display = 'none'; // Скрываем кнопку, пока слушаем
-    };
-
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        askAI(transcript);
-    };
-
-    recognition.onerror = (err) => {
-        console.error("Ошибка:", err.error);
-        startBtn.style.display = 'block';
-        startBtn.innerText = "Попробовать снова";
-    };
-
-    recognition.onend = () => {
-        // Если ничего не ответили, возвращаем кнопку через 2 сек
-        setTimeout(() => {
-            if (responseBox.innerText === "🎤 Слушаю вас...") {
-                startBtn.style.display = 'block';
-                startBtn.innerText = "🎤 Начать разговор";
-            }
-        }, 2000);
-    };
-}
-
-// --- 3. ЛОГИКА КНОПКИ (ДЛЯ IPHONE) ---
-startBtn.onclick = () => {
-    // Разблокировка звука для iOS
-    if (window.AudioContext || window.webkitAudioContext) {
-        const audioCtx = new (window.AudioContext || window.webkitwebkitAudioContext)();
-        audioCtx.resume();
-    }
-
-    if (recognition) {
-        try {
-            recognition.start();
-            startBtn.innerText = "🎤 Слушаю...";
-            startBtn.style.background = "#2ed573"; // Зеленый, когда слушает
-        } catch(e) {
-            console.log("Ошибка старта:", e);
-            // Если уже запущено, просто пробуем еще раз
-            recognition.stop();
-            setTimeout(() => recognition.start(), 100);
-        }
-    } else {
-        alert("Голос не поддерживается");
-    }
-};
-
-// --- 4. РАБОТА С НЕЙРОСЕТЬЮ ---
-async function askAI(question) {
-    if (!question) return;
-    const API_KEY = "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";
-
-    responseBox.innerText = 'Медсестра думает...';
+    const talkBtn = document.getElementById('talk-btn');
+    const responseBox = document.getElementById('response-text');
+    const modelViewer = document.getElementById('nurse-model');
     
-    try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "model": "openrouter/auto",
-                "messages": [{ "role": "user", "content": "Ты медсестра. Ответь кратко на русском: " + question }]
-            })
-        });
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
 
-        const data = await response.json();
-        const aiResponse = data.choices[0].message.content;
-        responseBox.innerText = aiResponse;
-        speak(aiResponse);
-    } catch (err) {
-        responseBox.innerText = 'Ошибка связи. Проверьте интернет.';
-        startBtn.style.display = 'block';
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ru-RU';
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            talkBtn.innerText = "🛑 Слушаю...";
+            talkBtn.classList.add('active');
+            responseBox.style.display = 'block';
+            responseBox.innerText = "Говорите...";
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            askAI(transcript);
+        };
+
+        recognition.onend = () => {
+            talkBtn.innerText = "🎤 Спросить медсестру";
+            talkBtn.classList.remove('active');
+        };
+
+        recognition.onerror = () => {
+            talkBtn.innerText = "🎤 Ошибка. Повторите";
+            talkBtn.classList.remove('active');
+        };
     }
-}
 
-// --- 5. ОЗВУЧКА ---
-function speak(text) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ru-RU';
+    talkBtn.onclick = (e) => {
+        e.preventDefault(); // Дополнительная защита от перезагрузки
+        
+        // Разблокировка звука
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    utterance.onend = () => {
-        // После того как медсестра ответила, возвращаем кнопку
-        startBtn.style.display = 'block';
-        startBtn.innerText = "🎤 Спросить еще раз";
+        if (recognition) {
+            try {
+                recognition.start();
+            } catch (err) {
+                recognition.stop();
+            }
+        }
     };
 
-    window.speechSynthesis.speak(utterance);
-}
+    async function askAI(question) {
+        if (!question || question.trim().length === 0) return;
 
+        const API_KEY = "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";
+        responseBox.style.display = 'block';
+        responseBox.innerText = 'Медсестра думает...';
 
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + API_KEY.trim(),
+                    "HTTP-Referer": window.location.href, // Важно для OpenRouter
+                    "X-Title": "Virtual Nurse Assistant" // Важно для OpenRouter
+                },
+                body: JSON.stringify({
+                    // Замени старую строку на эту:
+// Самый надежный вариант: ИИ сам найдет работающую бесплатную модель
+"model": "openrouter/auto",
+                    "messages": [
+                        { "role": "system", "content": "Ты медсестра. Отвечай очень кратко на русском (1-2 предложения)." },
+                        { "role": "user", "content": question }
+                    ]
+                })
+            });
+
+            const data = await response.json();
+            
+            // Если сервер вернул ошибку в самом JSON
+            if (data.error) {
+                console.error("Ошибка API:", data.error);
+                responseBox.innerText = "Ошибка ИИ: " + (data.error.message || "Доступ ограничен");
+                return;
+            }
+
+            if (data.choices && data.choices.length > 0) {
+                const answer = data.choices[0].message.content;
+                responseBox.innerText = answer;
+                speak(answer);
+            } else {
+                responseBox.innerText = "Ошибка: ИИ прислал пустой ответ.";
+            }
+        } catch (err) {
+            console.error("Ошибка сети:", err);
+            responseBox.innerText = "Ошибка связи. Проверьте интернет.";
+        }
+    }
+
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'ru-RU';
+        window.speechSynthesis.speak(msg);
+    }
 </script>
 </body>
 </html>
